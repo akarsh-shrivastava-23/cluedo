@@ -42,13 +42,41 @@ def main(ctx: click.Context, verbose: bool) -> None:
 @main.command()
 @click.option("--script-file", type=click.Path(), required=False)
 @click.option("--query-file", type=click.Path(), required=False)
-def run(script_file: Optional[str], query_file: Optional[str]) -> None:
+@click.option("--pod", help="Run inside this Kubernetes pod", required=False)
+@click.option("--namespace", default="default", show_default=True)
+@click.option("--container", required=False, help="Container name")
+@click.option("--artifact-dir", type=click.Path(file_okay=False), required=False)
+@click.option("--context", required=False, help="Kubernetes context")
+def run(
+    script_file: Optional[str],
+    query_file: Optional[str],
+    pod: Optional[str],
+    namespace: str,
+    container: Optional[str],
+    artifact_dir: Optional[str],
+    context: Optional[str],
+) -> None:
     """Run a script or query."""
     if not script_file and not query_file:
         raise click.UsageError(
             "At least one of --script-file or --query-file is required."
         )
     file_to_run = Path(script_file or query_file)  # prefer script if both given
+
+    if pod:
+        from .k8s import ensure_context, run_script_in_pod
+
+        api = ensure_context(context)
+        exit_code = run_script_in_pod(
+            api,
+            namespace,
+            pod,
+            file_to_run,
+            container=container,
+            artifact_dir=Path(artifact_dir or "."),
+        )
+        raise SystemExit(exit_code)
+
     try:
         cmd = command_for_file(file_to_run)
     except UnsupportedScriptError as exc:
@@ -56,8 +84,7 @@ def run(script_file: Optional[str], query_file: Optional[str]) -> None:
 
     logger.debug("Executing %s", " ".join(cmd))
     result = subprocess.run(cmd)
-    if result.returncode != 0:
-        raise SystemExit(result.returncode)
+    raise SystemExit(result.returncode)
 
 
 if __name__ == "__main__":  # pragma: no cover - manual execution
