@@ -5,6 +5,10 @@ from __future__ import annotations
 import sys
 import logging
 from typing import Optional
+from pathlib import Path
+import subprocess
+
+from .exec_map import command_for_file, UnsupportedScriptError
 
 import click
 
@@ -44,8 +48,16 @@ def run(script_file: Optional[str], query_file: Optional[str]) -> None:
         raise click.UsageError(
             "At least one of --script-file or --query-file is required."
         )
-    logger.debug("Running command")
-    click.echo("run invoked")
+    file_to_run = Path(script_file or query_file)  # prefer script if both given
+    try:
+        cmd = command_for_file(file_to_run)
+    except UnsupportedScriptError as exc:
+        raise click.ClickException(str(exc)) from exc
+
+    logger.debug("Executing %s", " ".join(cmd))
+    result = subprocess.run(cmd)
+    if result.returncode != 0:
+        raise SystemExit(result.returncode)
 
 
 if __name__ == "__main__":  # pragma: no cover - manual execution
