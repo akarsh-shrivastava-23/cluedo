@@ -16,3 +16,42 @@ def test_help():
     runner = CliRunner()
     result = runner.invoke(main, ["--help"])
     assert result.exit_code == 0
+
+
+def test_run_script_file():
+    """Running with only --script-file succeeds."""
+    runner = CliRunner()
+    result = runner.invoke(main, ["run", "--script-file", "foo"])
+    assert result.exit_code == 0
+
+
+def test_run_query_file():
+    """Running with only --query-file succeeds."""
+    runner = CliRunner()
+    result = runner.invoke(main, ["run", "--query-file", "bar"])
+    assert result.exit_code == 0
+
+
+def test_run_both_files():
+    """Running with both options succeeds."""
+    runner = CliRunner()
+    result = runner.invoke(
+        main,
+        ["run", "--script-file", "foo", "--query-file", "bar"],
+    )
+    assert result.exit_code == 0
+
+
+def test_run_missing_options():
+    """Fail when no options are provided."""
+    runner = CliRunner()
+    result = runner.invoke(main, ["run"])
+    assert result.exit_code != 0
+
+
+def test_verbose_outputs_debug():
+    """Verbose flag triggers debug output."""
+    runner = CliRunner()
+    result = runner.invoke(main, ["--verbose", "run", "--script-file", "foo"])
+    assert result.exit_code == 0
+    assert "Running command" in result.output
