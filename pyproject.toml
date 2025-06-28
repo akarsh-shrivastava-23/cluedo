@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "k8s-script-runner"
+version = "0.1.0"
+description = "CLI tool for running Kubernetes scripts."
+readme = "README.md"
+requires-python = ">=3.8"
+authors = [{name = "Your Name", email = "you@example.com"}]
+license = {file = "LICENSE"}
+
+[project.scripts]
+k8s-script-runner = "runner.cli:main"
